@@ -418,6 +418,13 @@ function! GetJsIndent(lnum)
         endif
     endif
 
+    if (line =~ '^\s*\*')
+        if (pline =~ '^\s*\/*')
+            call s:Log("Matched first line after comment block start")
+            return ind + 1
+        endif
+    endif
+
     " Handle: No matches
     " ==================
     call s:Log("Line didn't match anything.  Retaining indent")
