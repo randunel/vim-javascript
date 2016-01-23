@@ -399,12 +399,13 @@ function! GetJsIndent(lnum)
         return ind - &sw
     endif
 
-    if (line =~ '^\s*\.')
-        if (pline =~ '^\s*\.')
+    let dotstart = '^\s*\.'
+    if (line =~ dotstart)
+        if (pline =~ dotstart)
         else
             if s:IsParenEnd(pline)
                 let abeg = s:GetParenBeg(pnum)
-                if (abeg =~ '^\s*\.')
+                if (abeg =~ dotstart)
                     return indent(abeg)
                 endif
             else
@@ -412,7 +413,7 @@ function! GetJsIndent(lnum)
             endif
         endif
     else
-        if (pline =~ '^\s*\.')
+        if (pline =~ dotstart)
             return ind - &sw
         endif
     endif
