@@ -215,7 +215,7 @@ endfunction
 " Control Helpers
 " ===============
 let s:cntrl_beg_keys = '\(\(\(if\|for\|with\|while\)\s*(.*)\)\|\(try\|do\)\)\s*'
-let s:cntrl_mid_keys = '\(\(\(else\s*if\|catch\)\s*(.*)\)\|\(finally\|else\)\)\s*'
+let s:cntrl_mid_keys = '\(\(\(else\s*if\|([^\.]catch)\)\s*(.*)\)\|\(finally\|else\)\)\s*'
 
 let s:cntrl_beg = s:cntrl_beg_keys . s:js_end_line_comment . '$'
 let s:cntrl_mid = s:cntrl_mid_keys . s:js_end_line_comment . '$'
