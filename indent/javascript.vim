@@ -491,8 +491,11 @@ function! GetJsIndent(lnum)
                 let abeg = s:GetParenBeg(pnum)
                 let abline = getline(abeg)
                 if (abline =~ dotstart)
-                    call s:Log('Matched dot start abeg')
+                    call s:Log('Matched dot start with abeg dot')
                     return indent(abeg)
+                else
+                    call s:Log('Matched dot start with abeg non dot')
+                    return indent(abeg) + &sw
                 endif
             else
                 call s:Log('Matched dot start not paren end')
