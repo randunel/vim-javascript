@@ -94,6 +94,36 @@ function! s:GetNonCommentLine(lnum)
     return lnum
 endfunction
 
+" function! s:GetPrevNonComment(lnum)
+"     let lnum = prevnonblank(a:lnum)
+"
+"     while lnum > 0
+"         let line = getline(lnum)
+"         if line =~ '^\s*\/\/'
+"             let lnum = prevnonblank(lnum - 1)
+"         else
+"             return lnum
+"         endif
+"     endwhile
+"
+"     return lnum
+" endfunction
+
+function! s:GetNextNonComment(lnum)
+    let lnum = nextnonblank(a:lnum)
+
+    while lnum > 0
+        let line = getline(lnum)
+        if line =~ '^\s*\/\/'
+            let lnum = nextnonblank(lnum + 1)
+        else
+            return lnum
+        endif
+    endwhile
+
+    return lnum
+endfunction
+
 " = Method: SearchForPair
 "
 " Returns the beginning tag of a given pair starting from the given line.
@@ -434,9 +464,21 @@ function! GetJsIndent(lnum)
             endif
         endif
     else
+        let nnum = s:GetNextNonComment(a:lnum)
+        let nline = getline(nnum)
         if (pline =~ dotstart)
-            call s:Log('Matched NOT dot start with prev dot end')
-            return ind - &sw
+            "let ncpnum = s:GetPrevNonComment(a:lnum)
+            if (nline =~ dotstart)
+                "Comment in the middle of dot chain, do not indent
+            else
+                call s:Log('Matched NOT dot start with prev dot end')
+                return ind - &sw
+            endif
+        else
+            if (nline =~ dotstart)
+                call s:Log('Matched comment with next indented dot')
+                return ind + &sw
+            endif
         endif
     endif
 
