@@ -94,34 +94,62 @@ function! s:GetNonCommentLine(lnum)
     return lnum
 endfunction
 
-" function! s:GetPrevNonComment(lnum)
-"     let lnum = prevnonblank(a:lnum)
-"
-"     while lnum > 0
-"         let line = getline(lnum)
-"         if line =~ '^\s*\/\/'
-"             let lnum = prevnonblank(lnum - 1)
-"         else
-"             return lnum
-"         endif
-"     endwhile
-"
-"     return lnum
-" endfunction
-
-function! s:GetNextNonComment(lnum)
-    let lnum = nextnonblank(a:lnum)
-
-    while lnum > 0
+function! s:GetPrevNonComment(lnum)
+    if (a:lnum)
+        let lnum = prevnonblank(a:lnum)
         let line = getline(lnum)
         if line =~ '^\s*\/\/'
-            let lnum = nextnonblank(lnum + 1)
+            return s:GetPrevNonComment(lnum - 1)
+        elseif line =~ '^.*\*\/'
+            return s:GetPrevNonCommentBlock(lnum - 1)
         else
             return lnum
         endif
-    endwhile
 
-    return lnum
+        return lnum
+    endif
+endfunction
+
+function! s:GetPrevNonCommentBlock(lnum)
+    if (a:lnum)
+        let lnum = prevnonblank(a:lnum)
+        let line = getline(lnum)
+        if line =~ '^.*\/\*'
+            return s:GetPrevNonComment(lnum - 1)
+        else
+            return s:GetPrevNonCommentBlock(lnum - 1)
+        endif
+    endif
+endfunction
+
+function! s:GetNextNonComment(lnum)
+    if (a:lnum)
+        let lnum = nextnonblank(a:lnum)
+
+        let line = getline(lnum)
+        if line =~ '^\s*\/\/'
+            return s:GetNextNonComment(nextnonblank(lnum + 1))
+        elseif line =~ '^.*\/\*'
+            return s:GetNextNonCommentStarBlock(nextnonblank(lnum + 1))
+        else
+            return lnum
+        endif
+
+        return lnum
+    endif
+endfunction
+
+function! s:GetNextNonCommentStarBlock(lnum)
+    if (a:lnum)
+        let lnum = nextnonblank(a:lnum)
+
+        let line = getline(lnum)
+        if line =~ '^\s*\*\/'
+            return s:GetNextNonComment(nextnonblank(lnum + 1))
+        else
+            return s:GetNextNonCommentStarBlock(lnum + 1)
+        endif
+    endif
 endfunction
 
 " = Method: SearchForPair
@@ -450,7 +478,10 @@ function! GetJsIndent(lnum)
 
     let dotstart = '^\s*\.'
     if (line =~ dotstart)
-        if (pline =~ dotstart)
+        let ncpnum = s:GetPrevNonComment(a:lnum - 1)
+        let ncpline = getline(ncpnum)
+        if (ncpline =~ dotstart)
+            " Previous line is part of a dot chain
         else
             if s:IsParenEnd(pline)
                 let abeg = s:GetParenBeg(pnum)
@@ -464,18 +495,20 @@ function! GetJsIndent(lnum)
             endif
         endif
     else
-        let nnum = s:GetNextNonComment(a:lnum)
+        let nnum = s:GetNextNonComment(a:lnum + 1)
+        if (line =~ '^\s*\/\*')
+            let nnum = s:GetNextNonCommentStarBlock(a:lnum + 1)
+        endif
         let nline = getline(nnum)
         if (pline =~ dotstart)
-            "let ncpnum = s:GetPrevNonComment(a:lnum)
             if (nline =~ dotstart)
                 "Comment in the middle of dot chain, do not indent
             else
-                call s:Log('Matched NOT dot start with prev dot end')
+                call s:Log('Matched NOT dot start with prev dot end'.nline.string(nnum))
                 return ind - &sw
             endif
         else
-            if (nline =~ dotstart)
+            if (nline =~ dotstart && line =~ '^\s*\/\/')
                 call s:Log('Matched comment with next indented dot')
                 return ind + &sw
             endif
