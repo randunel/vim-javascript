@@ -485,7 +485,8 @@ function! GetJsIndent(lnum)
         else
             if s:IsParenEnd(pline)
                 let abeg = s:GetParenBeg(pnum)
-                if (abeg =~ dotstart)
+                let abline = getline(abeg)
+                if (abline =~ dotstart)
                     call s:Log('Matched dot start abeg')
                     return indent(abeg)
                 endif
@@ -504,8 +505,19 @@ function! GetJsIndent(lnum)
             if (nline =~ dotstart)
                 "Comment in the middle of dot chain, do not indent
             else
-                call s:Log('Matched NOT dot start with prev dot end'.nline.string(nnum))
+                call s:Log('Matched NOT dot start with prev dot end')
                 return ind - &sw
+            endif
+        elseif s:IsParenEnd(pline)
+            let abeg = s:GetParenBeg(pnum)
+            let abline = getline(abeg)
+            if (abline =~ dotstart)
+                if (nline =~ dotstart && line =~ '^\s*\/\/')
+                    "Comment in the middle of the dot chain after paren end
+                else
+                    call s:Log('Matched dot start abeg 2')
+                    return indent(abeg) - &sw
+                endif
             endif
         else
             if (nline =~ dotstart && line =~ '^\s*\/\/')
