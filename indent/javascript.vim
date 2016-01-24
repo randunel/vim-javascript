@@ -481,6 +481,10 @@ function! GetJsIndent(lnum)
         let ncpnum = s:GetPrevNonComment(a:lnum - 1)
         let ncpline = getline(ncpnum)
         if (ncpline =~ dotstart)
+            if s:IsParenBeg(ncpline)
+                call s:Log("Pline matched paren beg in chain")
+                return ind + &sw
+            endif
             " Previous line is part of a dot chain
         else
             if s:IsParenEnd(pline)
