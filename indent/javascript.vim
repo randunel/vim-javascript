@@ -57,6 +57,25 @@ function! s:IsComment(lnum)
     return s:IsInComment(a:lnum, 1) && s:IsInComment(a:lnum, strlen(line)) "Doesn't absolutely work.  Only Probably!
 endfunction
 
+function! s:IsInStarsComment(lnum)
+    let line = getline(a:lnum)
+    if (a:lnum - 1)
+        let prevline = getline(a:lnum - 1)
+        let startWithStar = '^\s*\*'
+        let startOfStarBlock = '^\s*\/\*'
+        if (line =~ startWithStar)
+            if (prevline =~ startWithStar)
+                return s:IsInStarsComment(a:lnum - 1)
+            else
+                if (prevline =~ startOfStarBlock)
+                    return 1
+                endif
+            endif
+        endif
+    endif
+    return 0
+endfunction
+
 
 " = Method: GetNonCommentLine
 "
@@ -406,23 +425,24 @@ function! GetJsIndent(lnum)
             if s:IsParenEnd(pline)
                 let abeg = s:GetParenBeg(pnum)
                 if (abeg =~ dotstart)
+                    call s:Log('Matched dot start abeg')
                     return indent(abeg)
                 endif
             else
+                call s:Log('Matched dot start not paren end')
                 return ind + &sw
             endif
         endif
     else
         if (pline =~ dotstart)
+            call s:Log('Matched NOT dot start with prev dot end')
             return ind - &sw
         endif
     endif
 
-    if (line =~ '^\s*\*')
-        if (pline =~ '^\s*\/*')
-            call s:Log("Matched first line after comment block start")
-            return ind + 1
-        endif
+    if (s:IsInStarsComment(a:lnum))
+        call s:Log("Matched comment in stars comment block")
+        return ind + 1
     endif
 
     " Handle: No matches
