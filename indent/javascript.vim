@@ -218,6 +218,21 @@ endfunction
 let s:paren_beg = '([^)]*' . s:js_end_line_comment . '$'
 let s:paren_end = '^' . s:js_mid_line_comment . '[^(]*)[;,]*'
 
+let s:paren_beg_simple = '('
+let s:paren_end_simple = ')'
+
+function! s:IsParenBegSimple(line)
+    return len(split(a:line, s:paren_beg_simple, 1)) > len(split(a:line, s:paren_end_simple, 1))
+endfunction
+
+function! s:IsParenEndSimple(line)
+    return len(split(a:line, s:paren_beg_simple, 1)) < len(split(a:line, s:paren_end_simple, 1))
+endfunction
+
+function! s:ParenEndSimpleCount(line)
+    return len(split(a:line, s:paren_end_simple, 1)) - len(split(a:line, s:paren_beg_simple, 1))
+endfunction
+
 function! s:IsParenBeg(line)
     return a:line =~ s:paren_beg
 endfunction
@@ -481,7 +496,7 @@ function! GetJsIndent(lnum)
         let ncpnum = s:GetPrevNonComment(a:lnum - 1)
         let ncpline = getline(ncpnum)
         if (ncpline =~ dotstart)
-            if s:IsParenBeg(ncpline)
+            if s:IsParenBegSimple(ncpline)
                 call s:Log("Pline matched paren beg in chain")
                 return ind + &sw
             endif
@@ -509,8 +524,17 @@ function! GetJsIndent(lnum)
         endif
         let nline = getline(nnum)
         if (pline =~ dotstart)
+            if (s:IsParenBegSimple(pline))
+                call s:Log('IsParenBegSimple')
+                let ind = ind + &sw
+            elseif (s:IsParenEndSimple(pline))
+                call s:Log('IsParenEndSimple')
+                return ind - (&sw * s:ParenEndSimpleCount(pline))
+            else
+            endif
+
             if (nline =~ dotstart)
-                "Comment in the middle of dot chain, do not indent
+                "Line does not start with dot but is between dotstart lines
             else
                 call s:Log('Matched NOT dot start with prev dot end')
                 return ind - &sw
