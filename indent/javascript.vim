@@ -530,11 +530,12 @@ function! GetJsIndent(lnum)
             elseif (s:IsParenEndSimple(pline))
                 call s:Log('IsParenEndSimple')
                 return ind - (&sw * s:ParenEndSimpleCount(pline))
-            else
             endif
 
-            if (nline =~ dotstart)
-                "Line does not start with dot but is between dotstart lines
+            if (nline =~ dotstart && line =~ '^\s*\/\/')
+                "Comment is between dotstart lines
+            elseif (nline =~ dotstart && line =~ '^\s*\/\*')
+                "Block comment is between dotstart lines
             else
                 call s:Log('Matched NOT dot start with prev dot end')
                 return ind - &sw
